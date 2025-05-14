@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: . # Build from root context to access ml_model
+      dockerfile: ./docker/backend.Dockerfile # Specify Dockerfile path
+    container_name: threat-detector-backend
+    volumes:
+      - ./ml_model:/app/ml_model # Mount ml_model for access to saved_transformer
+      - ./data:/app/data # Mount data for training script (if run inside container)
+      # If you train outside Docker and only want the model:
+      # - ./ml_model/saved_transformer:/app/ml_model/saved_transformer
+    ports:
+      - "8000:8000"
+    environment:
+      # - PYTHONUNBUFFERED=1 # Useful for seeing logs immediately
+      - MODEL_PATH=/app/ml_model/saved_transformer # Ensure model_utils.py can use this
+    # command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload # For dev
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 # For prod-like
+    depends_on:
+      - kafka # Optional: if Kafka is enabled
+    networks:
+      - threatnet
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: backend/Dockerfile
+    container_name: threat-detector-frontend
+    ports:
+      - "3000:80" # Nginx in frontend container listens on 80
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8000 # For local Docker access
+      # When deploying, this might be http://<backend_service_name>:8000 or an external URL
+      # For direct container-to-container communication (e.g., if Nginx proxies):
+      # - REACT_APP_BACKEND_URL=http://backend:8000
+    networks:
+      - threatnet
+
+  # --- Optional Kafka Setup ---
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - threatnet
+    # healthcheck:
+    #   test: ['CMD', 'nc', '-vz', 'localhost', '2181']
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092" # For clients outside Docker network
+      - "29092:29092" # For clients inside Docker network
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1 # For CP images
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1 # For CP images
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - threatnet
+    # healthcheck:
+    #   test: ["CMD-SHELL", "nc -vz localhost 9092 || exit 1"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 5
+
+  # kafka-producer-simulator: # Example - you'd need to create docker/kafka/producer.py and its Dockerfile
+  #   build:
+  #     context: ./docker/kafka
+  #     dockerfile: producer.Dockerfile
+  #   container_name: kafka-producer
+  #   depends_on:
+  #     - kafka
+  #   networks:
+  #     - threatnet
+  #   # command: python producer.py # to run your script
+
+networks:
+  threatnet:
+    driver: bridge

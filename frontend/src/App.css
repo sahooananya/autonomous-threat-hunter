@@ -1,0 +1,115 @@
+/* frontend/src/App.css */
+.App {
+  text-align: center;
+  font-family: Arial, sans-serif;
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  padding: 20px;
+}
+
+.App-header {
+  width: 80%;
+  max-width: 800px;
+}
+
+.App-header h1 {
+  color: #61dafb;
+  margin-bottom: 30px;
+}
+
+.log-form textarea {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background-color: #3e4451;
+  color: white;
+  box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+}
+
+.log-form button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: white;
+  background-color: #61dafb;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.log-form button:hover {
+  background-color: #21a1f1;
+}
+
+.log-form button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.prediction-result {
+  margin-top: 30px;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+}
+
+.prediction-result.malicious {
+  background-color: #ff4d4d; /* Red for malicious */
+  color: white;
+  border: 1px solid #cc0000;
+}
+.prediction-result .malicious {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+
+.prediction-result.normal {
+  background-color: #4CAF50; /* Green for normal/safe */
+  color: white;
+  border: 1px solid #388E3C;
+}
+.prediction-result .normal {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+
+.error-message {
+  color: #ff4d4d;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #5c3232;
+  border: 1px solid #ff4d4d;
+  border-radius: 5px;
+}
+
+.example-logs {
+  margin-top: 40px;
+  text-align: left;
+  font-size: 0.9rem;
+  background-color: #3e4451;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.example-logs h3 {
+  color: #61dafb;
+}
+
+.example-logs pre {
+  background-color: #282c34;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap; /* Allows long lines to wrap */
+  word-wrap: break-word; /* Breaks long words */
+}
